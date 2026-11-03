@@ -237,4 +237,9 @@ L.marker([53.717,108.383],{icon:icon('🦭','marker-route')}).bindPopup("<b>Уш
 routesLayer.addLayer(bbt).addLayer(khoboy).addLayer(tunka).addLayer(pat).addLayer(khabary);
 reservesLayer.addTo(map);
 function toggleLayer(t,btn){btn.classList.toggle('active');let l=t==='reserves'?reservesLayer:t==='air'?pollutionLayer:t==='forest'?deforestationLayer:routesLayer;map.hasLayer(l)?map.removeLayer(l):map.addLayer(l)}
-func
+function toggleLayer(t,btn){btn.classList.toggle('active');let l=t==='reserves'?reservesLayer:t==='air'?pollutionLayer:t==='forest'?deforestationLayer:routesLayer;map.hasLayer(l)?map.removeLayer(l):map.addLayer(l)}
+function showRoute(id){if(!map.hasLayer(routesLayer)){map.addLayer(routesLayer);document.querySelectorAll('.btn-toggle')[3].classList.add('active')}const r={bbt:bbt,khoboy:khoboy,tunka:tunka,pat:pat,khabary:khabary}[id];map.fitBounds(r.getBounds(),{padding:[50,50]});setTimeout(()=>r.openPopup(),500)}
+function calculateFootprint(){const car=+document.getElementById('car').value,trash=+document.getElementById('trash').value,energy=+document.getElementById('energy').value||0,nature=+document.getElementById('nature').value,meat=+document.getElementById('meat').value;let score=car+trash+(24-energy)*1.5+nature+meat,planets=(100-score)/15+1;if(planets<1)planets=1;if(planets>5)planets=5;let co2=Math.round(planets*2.5),m,c;if(score>80){m="🌱 Отлично! Вы живёте экологично!";c="#1b5e20"}else if(score>60){m="🌿 Хорошо, но есть куда стремиться.";c="#43a047"}else if(score>40){m="⚠️ Средний результат.";c="#ef6c00"}else{m="🏭 Экослед велик! Пора менять привычки.";c="#c62828"}const r=document.getElementById('result');r.style.display='block';r.style.color=c;r.innerHTML=`<div style="font-size:1.5rem;margin-bottom:8px">Результат: ${planets.toFixed(1)} "планеты"</div><div style="font-size:1rem;color:#555;margin-bottom:10px">Годовой след: ~${co2} тонн CO₂</div><div style="font-size:.9rem;color:#666;margin-bottom:15px">(Нужно ${planets.toFixed(1)} планет, если все будут жить так)</div><div style="font-size:1.05rem;padding:12px;background:#fff;border-radius:8px">${m}</div>`}
+</script>
+</body>
+</html>
