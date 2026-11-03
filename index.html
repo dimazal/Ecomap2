@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; img-src * data: blob:;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Эко-трекинг: Иркутская область</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+:root{--p:#1b5e20;--a:#43a047;--b:#0277bd;--bg:#f1f8e9;--t:#263238;--c:#fff;--w:#ff6f00;--d:#d32f2f}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--t);line-height:1.6}
+header{background:linear-gradient(135deg,var(--p),var(--b));color:#fff;padding:25px;text-align:center;box-shadow:0 4px 12px rgba(0,0,0,.2)}
+h1{font-size:1.8rem;margin:0}
+.sub{margin:8px 0 0;opacity:.95;font-size:1rem}
+.container{padding:20px;max-width:900px;margin:0 auto}
+section{background:var(--c);border-radius:16px;padding:25px;margin-bottom:25px;box-shadow:0 4px 16px rgba(0,0,0,.08);transition:transform .3s}
+section:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.12)}
+h2{color:var(--p);margin-bottom:15px;font-size:1.4rem;display:flex;align-items:center;gap:10px}
+h2::before{content:'';width:4px;height:24px;background:var(--a);border-radius:2px}
+#map{height:500px;width:100%;border-radius:12px;z-index:1;border:2px solid #e0e0e0}
+.controls{display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap}
+.btn-toggle{padding:10px 16px;border:none;border-radius:24px;cursor:pointer;font-weight:600;font-size:.9rem;transition:all .3s;background:#e8e8e8;color:#555;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.btn-toggle:hover{transform:translateY(-2px)}
+.btn-toggle.active{background:var(--p);color:#fff;box-shadow:0 4px 12px rgba(30,94,32,.3)}
+.legend{background:rgba(255,255,255,.98);padding:15px;border-radius:12px;margin-top:15px;font-size:.9rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.legend-item{display:flex;align-items:center;gap:8px}
+.legend-dot{width:16px;height:16px;border-radius:50%;display:inline-block;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.custom-marker{background:#fff;border-radius:50%;width:40px!important;height:40px!important;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 3px 10px rgba(0,0,0,.3);border:3px solid #fff;transition:all .3s}
+.custom-marker:hover{transform:scale(1.15) rotate(5deg)}
+.marker-reserve{background:linear-gradient(135deg,#2e7d32,#43a047)}
+.marker-baikal{background:linear-gradient(135deg,#0277bd,#039be5)}
+.marker-animal{background:linear-gradient(135deg,#6a1b9a,#8e24aa)}
+.marker-pollution{background:linear-gradient(135deg,#c62828,#e53935)}
+.marker-forest{background:linear-gradient(135deg,#5d4037,#795548)}
+.marker-route{background:linear-gradient(135deg,#ef6c00,#ff9800)}
+.route-card{background:linear-gradient(135deg,#e8f5e9,#fff);padding:15px;margin:12px 0;border-radius:12px;border-left:5px solid var(--a);cursor:pointer;transition:all .3s}
+.route-card:hover{transform:translateX(6px);box-shadow:0 4px 16px rgba(0,0,0,.12);border-left-color:var(--w)}
+.route-card h3{margin:0 0 8px;color:var(--p);font-size:1.1rem}
+.route-card p{margin:0;font-size:.9rem;color:#555;line-height:1.5}
+.route-info{display:flex;gap:15px;margin-top:10px;font-size:.85rem;color:#777;flex-wrap:wrap}
+.animal-card{background:linear-gradient(135deg,#f9fbe7,#fff);padding:15px;margin:12px 0;border-left:5px solid var(--p);border-radius:10px}
+.animal-card h4{margin:0 0 8px;color:var(--p);font-size:1.05rem}
+.animal-card p{margin:0;font-size:.9rem;color:#555;line-height:1.5}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin:20px 0}
+.stat-card{background:linear-gradient(135deg,#fff,#f5f5f5);padding:20px;border-radius:12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.08);border-top:4px solid var(--a)}
+.stat-card.danger{border-top-color:var(--d)}
+.stat-card.warn{border-top-color:var(--w)}
+.stat-number{font-size:2rem;font-weight:bold;color:var(--p);margin-bottom:5px}
+.stat-card.danger .stat-number{color:var(--d)}
+.stat-card.warn .stat-number{color:var(--w)}
+.stat-label{font-size:.85rem;color:#666}
+.form-group{margin-bottom:20px}
+label{display:block;margin-bottom:8px;font-weight:600;font-size:1rem}
+select,input{width:100%;padding:12px;border:2px solid #e0e0e0;border-radius:8px;font-size:1rem;transition:border-color .3s}
+select:focus,input:focus{outline:none;border-color:var(--a)}
+.calc-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--p),var(--a));color:#fff;border:none;border-radius:10px;font-size:1.1rem;cursor:pointer;font-weight:bold;transition:all .3s;box-shadow:0 4px 12px rgba(30,94,32,.3)}
+.calc-btn:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(30,94,32,.4)}
+#result{margin-top:20px;padding:20px;background:linear-gradient(135deg,#e8f5e9,#fff);border-radius:12px;display:none;text-align:center;font-weight:600}
+.help-list{list-style:none;padding:0}
+.help-list li{padding:12px;margin:8px 0;background:#f5f5f5;border-radius:8px;border-left:4px solid var(--a);transition:all .3s}
+.help-list li:hover{background:#e8f5e9;transform:translateX(4px)}
+footer{text-align:center;padding:25px;font-size:.9rem;color:#777;background:#fff;margin-top:20px}
+@media(max-width:600px){h1{font-size:1.4rem}.container{padding:15px}section{padding:18px}#map{height:400px}.stat-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header>
+<h1>🌲 Эко-трекинг: Иркутская область</h1>
+<p class="sub">Байкал, тайга, маршруты и экологические проблемы региона</p>
+</header>
+<div class="container">
+<section>
+<h2>📊 Статистика региона</h2>
+<div class="stat-grid">
+<div class="stat-card"><div class="stat-number">20%</div><div class="stat-label">мировых запасов пресной воды в Байкале</div></div>
+<div class="stat-card"><div class="stat-number">774,8</div><div class="stat-label">тыс. км² — площадь области</div></div>
+<div class="stat-card danger"><div class="stat-number">3</div><div class="stat-label">города в списке самых загрязнённых РФ</div></div>
+<div class="stat-card warn"><div class="stat-number">400+</div><div class="stat-label">видов в Красной книге региона</div></div>
+</div>
+</section>
+<section>
+<h2>🗺️ Интерактивная карта региона</h2>
+<p style="font-size:.95em;color:#666;margin-bottom:15px">Переключайте слои и кликайте по маршрутам.</p>
+<div class="controls">
+<button class="btn-toggle active" onclick="toggleLayer('reserves',this)">🌿 ООПТ</button>
+<button class="btn-toggle" onclick="toggleLayer('air',this)">🏭 Загрязнение</button>
+<button class="btn-toggle" onclick="toggleLayer('forest',this)">🪵 Вырубка</button>
+<button class="btn-toggle" onclick="toggleLayer('routes',this)">🥾 Маршруты</button>
+</div>
+<div id="map"></div>
+<div class="legend">
+<div class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg,#2e7d32,#43a047)"></span>Заповедники</div>
+<div class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg,#0277bd,#039be5)"></span>Байкал</div>
+<div class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg,#6a1b9a,#8e24aa)"></span>Красная книга</div>
+<div class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg,#c62828,#e53935)"></span>Загрязнение</div>
+<div class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg,#5d4037,#795548)"></span>Вырубка</div>
+<div class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg,#ef6c00,#ff9800)"></span>Экотропы</div>
+</div>
+</section>
+<section>
+<h2>🥾 Экологические маршруты</h2>
+<p style="font-size:.95em;color:#666;margin-bottom:15px">Нажмите на маршрут для просмотра на карте.</p>
+<div class="route-card" onclick="showRoute('bbt')">
+<h3>🌊 Большая Байкальская тропа</h3>
+<p>Маршрут вдоль побережья Байкала от Листвянки до Больших Котов через тайгу и скалы.</p>
+<div class="route-info"><span>📍 Листвянка — Большие Коты</span><span>📏 18 км</span><span>⏱ 1-2 дня</span><span>⚡ Средняя</span></div>
+</div>
+<div class="route-card" onclick="showRoute('khoboy')">
+<h3>🏔️ Мыс Хобой (о. Ольхон)</h3>
+<p>Северная оконечность Ольхона — сакральное место с панорамой всего Байкала.</p>
+<div class="route-info"><span>📍 пос. Хужир</span><span>📏 6 км</span><span>⏱ 3-4 часа</span><span>⚡ Лёгкая</span></div>
+</div>
+<div class="route-card" onclick="showRoute('tunka')">
+<h3>♨️ Тункинская долина</h3>
+<p>Маршрут по Тункинскому нацпарку: минеральные источники, потухшие вулканы, Восточный Саян.</p>
+<div class="route-info"><span>📍 Аршан — Нильстола</span><span>📏 25 км</span><span>⏱ 1-2 дня</span><span>⚡ Средняя</span></div>
+</div>
+<div class="route-card" onclick="showRoute('pat')">
+<h3>🌲 Падинский заказник</h3>
+<p>Сочетание степи и леса. Место обитания редких птиц и степных животных.</p>
+<div class="route-info"><span>📍 Усть-Ордынский р-н</span><span>📏 10 км</span><span>⏱ 4-5 часов</span><span>⚡ Лёгкая</span></div>
+</div>
+<div class="route-card" onclick="showRoute('khabary')">
+<h3>🦭 Ушканьи острова</h3>
+<p>Архипелаг в Байкале — главное лежбище байкальской нерпы. Доступ ограничен.</p>
+<div class="route-info"><span>📍 Средний Байкал</span><span>📏 5 км</span><span>⏱ 1 день</span><span>⚡ Требуется разрешение</span></div>
+</div>
+</section>
+<section>
+<h2>📕 Красная книга Иркутской области</h2>
+<p style="margin-bottom:15px">Виды под угрозой исчезновения (категории МСОП):</p>
+<div class="animal-card">
+<h4>🦭 Байкальская нерпа (Pusa sibirica) — Категория 3</h4>
+<p>Единственный пресноводный тюлень-эндемик Байкала. Численность: 80-100 тыс. особей. Угрозы: загрязнение, браконьерство, изменение климата.</p>
+</div>
+<div class="animal-card">
+<h4>🦅 Орлан-белохвост (Haliaeetus albicilla) — Категория 2</h4>
+<p>Крупнейшая хищная птица России, размах крыльев до 2,5 м. В области: 150-200 пар. Угрозы: разрушение гнездовий, пестициды.</p>
+</div>
+<div class="animal-card">
+<h4>🐆 Снежный барс (Panthera uncia) — Категория 1</h4>
+<p>Ирбис обитает в Восточном Саяне. В области: 5-7 особей. Глобально: ~4000 особей. Угрозы: браконьерство, фрагментация ареала.</p>
+</div>
+<div class="animal-card">
+<h4>🌿 Родиола розовая (Rhodiola rosea) — Категория 2</h4>
+<p>«Золотой корень» — лекарственное растение Саян. Популяция сократилась на 40-60% за 20 лет из-за браконьерского сбора.</p>
+</div>
+<div class="animal-card">
+<h4>🦌 Кабарга (Moschus moschiferus) — Категория 2</h4>
+<p>Миниатюрный олень без рогов, но с клыками. В области: 3-5 тыс. особей. Ценится мускусная железа. Угрозы: браконьерство, вырубка лесов.</p>
+</div>
+<div class="animal-card">
+<h4>🦉 Филин (Bubo bubo) — Категория 3</h4>
+<p>Крупнейшая сова России, размах крыльев до 1,9 м. Гнездится в скалах Прибайкалья. Угрозы: беспокойство, вырубка старых лесов.</p>
+</div>
+</section>
+<section>
+<h2>👣 Мой экологический след</h2>
+<p style="margin-bottom:15px">Рассчитайте влияние привычек на природу (методика Global Footprint Network).</p>
+<div class="form-group"><label>Как добираетесь до школы/работы?</label>
+<select id="car"><option value="0">Пешком / Велосипед (0 кг CO₂/день)</option><option value="10">Общественный транспорт (~1,5 кг CO₂/день)</option><option value="30">Личный авто (~4,5 кг CO₂/день)</option></select></div>
+<div class="form-group"><label>Что делаете с мусором?</label>
+<select id="trash"><option value="30">Сортирую и сдаю (снижение на 30%)</option><option value="15">Иногда сортирую (снижение на 15%)</option><option value="0">Всё в одно ведро</option></select></div>
+<div class="form-group"><label>Часов света/техники в день?</label>
+<input type="number" id="energy" placeholder="5" min="0" max="24"></div>
+<div class="form-group"><label>Убираете ли мусор на природе?</label>
+<select id="nature"><option value="20">Всегда, даже чужой (+20 баллов)</option><option value="10">Только свой (+10 баллов)</option><option value="0">Нет (0 баллов)</option></select></div>
+<div class="form-group"><label>Как часто едите мясо?</label>
+<select id="meat"><option value="30">Вегетарианец (низкий след)</option><option value="20">Редко (1-2 раза/неделю)</option><option value="10">Каждый день (высокий след)</option></select></div>
+<button class="calc-btn" onclick="calculateFootprint()">Рассчитать экослед</button>
+<div id="result"></div>
+</section>
+<section>
+<h2>🤝 Как помочь природе Иркутской области</h2>
+<ul class="help-list">
+<li>🌱 <strong>Сажайте деревья:</strong> участвуйте в акциях «Сад памяти» и субботниках</li>
+<li>♻️ <strong>Сортируйте мусор:</strong> пункты приёма на recycles.ru</li>
+<li>🚶 <strong>Экотранспорт:</strong> велосипед, самокат, общественный транспорт</li>
+<li>🏕️ <strong>Посещайте заповедники:</strong> экотуризм поддерживает охрану (заповедноеприбайкалье.рф)</li>
+<li>🗑️ <strong>Убирайте мусор:</strong> движения «Чистые игры», «РазДельный Сбор»</li>
+<li>💧 <strong>Экономьте воду:</strong> Байкал — хрупкая экосистема</li>
+<li>📢 <strong>Распространяйте знания:</strong> расскажите о проблемах региона</li>
+<li>🦭 <strong>Поддержите нерпу:</strong> не покупайте сувениры, сообщайте о браконьерах</li>
+</ul>
+</section>
+<section>
+<h2>📊 Выводы проекта</h2>
+<p>Иркутская область — уникальный регион с Байкалом (20% пресной воды планеты) и сибирской тайгой. Сохранение этого наследия — задача каждого жителя.</p>
+<p style="margin-top:10px"><strong>Экотуризм:</strong> пешие маршруты по заповедникам помогают знакомиться с природой без вреда. Ответственный турист — защитник Байкала.</p>
+<p style="margin-top:10px"><strong>Личный вклад:</strong> калькулятор показывает, что небольшие изменения привычек значительно снижают нагрузку на природу.</p>
+</section>
+</div>
+<footer>Итоговый проект 9 класса • Иркутская область • 2026<br><span style="font-size:.8rem;opacity:.7">Данные: ФГБУ «Заповедное Прибайкалье», Красная книга Иркутской области, Росприроднадзор</span></footer>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map=L.map('map').setView([54.5,106.5],6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(map);
+function icon(e,c){return L.divIcon({html:`<div class="custom-marker ${c}">${e}</div>`,className:'',iconSize:[40,40],iconAnchor:[20,20],popupAnchor:[0,-20]})}
+const reservesLayer=L.layerGroup([
+L.marker([51.856,104.859],{icon:icon('🌲','marker-reserve')}).bindPopup("<b>Прибайкальский нацпарк</b><br>1986 г. • 417 292 га<br>Охрана побережья Байкала"),
+L.marker([57.483,113.517],{icon:icon('🌲','marker-reserve')}).bindPopup("<b>Заповедник «Витимский»</b><br>1984 г. • 585 008 га<br>Крупнейший в России"),
+L.marker([54.483,109.017],{icon:icon('🌲','marker-reserve')}).bindPopup("<b>Баргузинский заповедник</b><br>1916 г. • 374 321 га<br>Старейший в РФ"),
+L.marker([51.533,102.433],{icon:icon('🌲','marker-reserve')}).bindPopup("<b>Тункинский нацпарк</b><br>1991 г. • 118 366 га<br>Восточный Саян"),
+L.marker([53.5,108],{icon:icon('🌊','marker-baikal')}).bindPopup("<b>🌊 Байкал</b><br>Глубина: 1642 м<br>Возраст: ~25 млн лет<br>23 615 км³ воды • ЮНЕСКО"),
+L.marker([53.717,108.383],{icon:icon('🦭','marker-animal')}).bindPopup("<b>🦭 Ушканьи острова</b><br>Лежбище нерпы<br>Доступ ограничен"),
+L.marker([55.2,103.5],{icon:icon('🦅','marker-animal')}).bindPopup("<b>🦅 Гнездовье орлана</b><br>150-200 пар в области"),
+L.marker([52.3,104.3],{icon:icon('🦌','marker-animal')}).bindPopup("<b>🦌 Место обитания кабарги</b><br>3-5 тыс. особей")
+]);
+const pollutionLayer=L.layerGroup([
+L.circle([56.133,101.6],{color:'#c62828',fillColor:'#e53935',fillOpacity:.6,radius:35000}).bindPopup("<b>Братск</b><br>218 тыс. чел.<br>БрАЗ, БЦБК<br>Фенол, формальдегид, SO₂"),
+L.circle([52.55,103.883],{color:'#c62828',fillColor:'#e53935',fillOpacity:.6,radius:28000}).bindPopup("<b>Ангарск</b><br>221 тыс. чел.<br>АНХК, цементный завод<br>H₂S, NH₃, фенол"),
+L.circle([52.283,104.3],{color:'#ef6c00',fillColor:'#ff9800',fillOpacity:.5,radius:20000}).bindPopup("<b>Иркутск</b><br>623 тыс. чел.<br>ИркАЗ, Иркутскэнерго<br>Фтористые соединения, SO₂"),
+L.circle([56.783,105.767],{color:'#ef6c00',fillColor:'#ff9800',fillOpacity:.5,radius:18000}).bindPopup("<b>Усть-Кут</b><br>40 тыс. чел.<br>Лесопереработка<br>Пыль, ЛОС")
+]);
+const deforestationLayer=L.layerGroup([
+L.rectangle([[57,103],[57.5,104]],{color:'#5d4037',fillColor:'#795548',fillOpacity:.7}).bindPopup("<b>Зона вырубки</b><br>Киренский р-н<br>Лиственница, сосна<br>Экспорт в Китай"),
+L.rectangle([[56,105],[56.5,106]],{color:'#5d4037',fillColor:'#795548',fillOpacity:.7}).bindPopup("<b>Зона лесозаготовок</b><br>Усть-Кутский р-н<br>Незаконные рубки"),
+L.rectangle([[55,98],[55.5,99]],{color:'#5d4037',fillColor:'#795548',fillOpacity:.7}).bindPopup("<b>Зона вырубки</b><br>Западные районы<br>Восстановление затруднено"),
+L.rectangle([[54.5,100.5],[55,101]],{color:'#5d4037',fillColor:'#795548',fillOpacity:.7}).bindPopup("<b>Зона вырубки</b><br>Нижнеудинский р-н<br>Кедр, пихта")
+]);
+const routesLayer=L.layerGroup();
+const bbt=L.polyline([[51.856,104.859],[51.87,104.87],[51.885,104.89],[51.9,104.92],[51.92,104.98],[51.96,105.1],[52,105.22],[52.02,105.26]],{color:'#ef6c00',weight:5,opacity:.8,dashArray:'12,8'}).bindPopup("<b>🌊 ББТ</b><br>Листвянка → Большие Коты<br>18 км • Средняя • 1-2 дня");
+L.marker([51.856,104.859],{icon:icon('🏁','marker-route')}).bindPopup("<b>Старт: Листвянка</b><br>Музей Байкала, нерпинарий").addTo(routesLayer);
+L.marker([52.02,105.26],{icon:icon('🏁','marker-route')}).bindPopup("<b>Финиш: Большие Коты</b><br>Старинный посёлок золотодобытчиков").addTo(routesLayer);
+const khoboy=L.polyline([[53.15,107.35],[53.2,107.37],[53.25,107.38],[53.3,107.39],[53.35,107.4],[53.4,107.41],[53.45,107.42],[53.49,107.43]],{color:'#ef6c00',weight:5,opacity:.8,dashArray:'12,8'}).bindPopup("<b>🏔️ Мыс Хобой</b><br>Хужир → Хобой<br>6 км • Лёгкая • 3-4 часа");
+L.marker([53.15,107.35],{icon:icon('🏁','marker-route')}).bindPopup("<b>Старт: Хужир</b><br>Центр Ольхона").addTo(routesLayer);
+L.marker([53.49,107.43],{icon:icon('🏔️','marker-route')}).bindPopup("<b>Мыс Хобой</b><br>Северная оконечность Ольхона<br>Сакральное место").addTo(routesLayer);
+const tunka=L.polyline([[51.42,102.4],[51.45,102.35],[51.48,102.3],[51.51,102.25],[51.54,102.2],[51.57,102.15],[51.6,102.1],[51.63,102.05],[51.66,102]],{color:'#ef6c00',weight:5,opacity:.8,dashArray:'12,8'}).bindPopup("<b>♨️ Тункинская долина</b><br>Аршан → Нильстола<br>25 км • Средняя • 1-2 дня");
+L.marker([51.42,102.4],{icon:icon('♨️','marker-route')}).bindPopup("<b>Старт: Аршан</b><br>Минеральные источники, водопады").addTo(routesLayer);
+L.marker([51.66,102],{icon:icon('♨️','marker-route')}).bindPopup("<b>Финиш: Нильстола</b><br>Буддийский дацан").addTo(routesLayer);
+const pat=L.polyline([[52.8,104.8],[52.82,104.83],[52.84,104.86],[52.86,104.89],[52.88,104.92]],{color:'#ef6c00',weight:5,opacity:.8,dashArray:'12,8'}).bindPopup("<b>🌲 Падинский заказник</b><br>10 км • Лёгкая • 4-5 часов");
+L.marker([52.8,104.8],{icon:icon('🏁','marker-route')}).bindPopup("<b>Старт маршрута</b>").addTo(routesLayer);
+L.marker([52.88,104.92],{icon:icon('🌲','marker-route')}).bindPopup("<b>Падинский заказник</b><br>Степь и лес<br>Редкие птицы").addTo(routesLayer);
+const khabary=L.polyline([[53.717,108.383],[53.72,108.39],[53.725,108.395],[53.73,108.4]],{color:'#ef6c00',weight:5,opacity:.8,dashArray:'12,8'}).bindPopup("<b>🦭 Ушканьи острова</b><br>5 км • Требуется разрешение<br>Наблюдение за нерпой");
+L.marker([53.717,108.383],{icon:icon('🦭','marker-route')}).bindPopup("<b>Ушканьи острова</b><br>Лежбище нерпы<br>Доступ ограничен").addTo(routesLayer);
+routesLayer.addLayer(bbt).addLayer(khoboy).addLayer(tunka).addLayer(pat).addLayer(khabary);
+reservesLayer.addTo(map);
+function toggleLayer(t,btn){btn.classList.toggle('active');let l=t==='reserves'?reservesLayer:t==='air'?pollutionLayer:t==='forest'?deforestationLayer:routesLayer;map.hasLayer(l)?map.removeLayer(l):map.addLayer(l)}
+func
